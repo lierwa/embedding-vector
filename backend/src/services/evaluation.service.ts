@@ -97,7 +97,7 @@ export class EvaluationService {
             evaluationId,
             testCaseId: testCase.id,
             query: testCase.query,
-            retrievedChunks: results,
+            retrievedChunks: JSON.stringify(results),
             retrievalScore: avgScore,
             recallScore: recall,
             llmScore,

@@ -15,7 +15,7 @@ export class TextChunker {
     while (start < tokens.length) {
       const end = Math.min(start + chunkSize, tokens.length);
       const chunkTokens = tokens.slice(start, end);
-      const chunkText = this.encoder.decode(chunkTokens);
+      const chunkText = this.encoder.decode(Array.from(chunkTokens));
       chunks.push(chunkText);
 
       start += chunkSize - overlap;
