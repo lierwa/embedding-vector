@@ -1,0 +1,119 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model KnowledgeBase {
+  id              String   @id @default(uuid())
+  name            String
+  description     String?
+  embeddingModel  String   @default("text-embedding-3-small")
+  chunkSize       Int      @default(500)
+  chunkOverlap    Int      @default(100)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  documents       Document[]
+  testCases       TestCase[]
+  evaluations     Evaluation[]
+
+  @@map("knowledge_bases")
+}
+
+model Document {
+  id              String    @id @default(uuid())
+  knowledgeBaseId String
+  filename        String
+  filetype        String
+  filepath        String
+  status          String    @default("pending")
+  errorMessage    String?
+  uploadedAt      DateTime  @default(now())
+  processedAt     DateTime?
+  
+  knowledgeBase   KnowledgeBase @relation(fields: [knowledgeBaseId], references: [id], onDelete: Cascade)
+  chunks          Chunk[]
+
+  @@map("documents")
+}
+
+model Chunk {
+  id              String    @id @default(uuid())
+  documentId      String
+  knowledgeBaseId String
+  text            String    @db.Text
+  tokenCount      Int
+  chunkIndex      Int
+  createdAt       DateTime  @default(now())
+  
+  document        Document  @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  @@map("chunks")
+}
+
+model TestCase {
+  id              String    @id @default(uuid())
+  knowledgeBaseId String
+  query           String    @db.Text
+  expectedAnswer  String?   @db.Text
+  expectedDocIds  String[]
+  createdAt       DateTime  @default(now())
+  
+  knowledgeBase   KnowledgeBase @relation(fields: [knowledgeBaseId], references: [id], onDelete: Cascade)
+  results         EvaluationResult[]
+
+  @@map("test_cases")
+}
+
+model Evaluation {
+  id              String    @id @default(uuid())
+  knowledgeBaseId String
+  name            String
+  status          String    @default("pending")
+  topK            Int       @default(5)
+  useLLMEval      Boolean   @default(false)
+  createdAt       DateTime  @default(now())
+  completedAt     DateTime?
+  
+  knowledgeBase   KnowledgeBase @relation(fields: [knowledgeBaseId], references: [id], onDelete: Cascade)
+  results         EvaluationResult[]
+  metrics         EvaluationMetrics?
+
+  @@map("evaluations")
+}
+
+model EvaluationResult {
+  id              String    @id @default(uuid())
+  evaluationId    String
+  testCaseId      String
+  query           String    @db.Text
+  retrievedChunks Json
+  retrievalScore  Float?
+  recallScore     Float?
+  llmScore        Float?
+  llmFeedback     String?   @db.Text
+  createdAt       DateTime  @default(now())
+  
+  evaluation      Evaluation @relation(fields: [evaluationId], references: [id], onDelete: Cascade)
+  testCase        TestCase   @relation(fields: [testCaseId], references: [id], onDelete: Cascade)
+
+  @@map("evaluation_results")
+}
+
+model EvaluationMetrics {
+  id                String    @id @default(uuid())
+  evaluationId      String    @unique
+  totalQueries      Int
+  avgRecall         Float
+  avgRetrievalScore Float
+  avgLLMScore       Float?
+  createdAt         DateTime  @default(now())
+  
+  evaluation        Evaluation @relation(fields: [evaluationId], references: [id], onDelete: Cascade)
+
+  @@map("evaluation_metrics")
+}

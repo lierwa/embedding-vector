@@ -1,0 +1,29 @@
+node_modules
+dist
+.env
+*.log
+.DS_Store
+
+# Backend
+backend/dist
+backend/node_modules
+backend/.env
+
+# Frontend
+frontend/dist
+frontend/node_modules
+frontend/.env
+
+# Storage
+storage/*
+!storage/.gitkeep
+
+# Database
+*.db
+*.sqlite
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
