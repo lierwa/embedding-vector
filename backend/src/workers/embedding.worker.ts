@@ -28,7 +28,7 @@ export const embeddingWorker = new Worker(
         throw new Error('No chunks found for document');
       }
 
-      const texts = chunks.map((c) => c.text);
+      const texts = chunks.map((c: any) => c.text);
       const result = await batchEmbed(texts, embeddingModel);
 
       await indexQueue.add('index', {

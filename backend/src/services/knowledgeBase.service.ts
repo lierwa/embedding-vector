@@ -44,7 +44,7 @@ export class KnowledgeBaseService {
 
     const stats = {
       documentCount: kb.documents.length,
-      completedDocuments: kb.documents.filter((d) => d.status === 'completed').length,
+      completedDocuments: kb.documents.filter((d: any) => d.status === 'completed').length,
       testCaseCount: kb.testCases.length,
       evaluationCount: kb.evaluations.length,
     };

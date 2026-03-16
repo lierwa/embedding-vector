@@ -8,14 +8,18 @@ export class TextChunker {
   }
 
   chunk(text: string, chunkSize: number, overlap: number): string[] {
-    const tokens = this.encoder.encode(text);
+    const tokens: number[] = Array.from(this.encoder.encode(text));
     const chunks: string[] = [];
+    const decoder = new TextDecoder();
 
     let start = 0;
     while (start < tokens.length) {
       const end = Math.min(start + chunkSize, tokens.length);
       const chunkTokens = tokens.slice(start, end);
-      const chunkText = this.encoder.decode(Array.from(chunkTokens));
+      
+      // Decode returns Uint8Array, convert to string
+      const decodedBytes = this.encoder.decode(new Uint32Array(chunkTokens));
+      const chunkText = decoder.decode(decodedBytes);
       chunks.push(chunkText);
 
       start += chunkSize - overlap;
@@ -25,7 +29,7 @@ export class TextChunker {
   }
 
   countTokens(text: string): number {
-    return this.encoder.encode(text).length;
+    return Array.from(this.encoder.encode(text)).length;
   }
 
   free(): void {

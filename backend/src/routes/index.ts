@@ -1,10 +1,10 @@
-import { Router } from 'express';
+import { Router, type IRouter } from 'express';
 import * as kbController from '../controllers/knowledgeBase.controller';
 import * as docController from '../controllers/document.controller';
 import * as retrievalController from '../controllers/retrieval.controller';
 import * as evalController from '../controllers/evaluation.controller';
 
-const router = Router();
+const router: IRouter = Router();
 
 router.post('/kb', kbController.createKnowledgeBase);
 router.get('/kb', kbController.listKnowledgeBases);
