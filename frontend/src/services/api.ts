@@ -39,6 +39,12 @@ export interface Document {
   processedAt?: string;
 }
 
+export interface DocumentProcessLog {
+  timestamp: string;
+  level: 'info' | 'error';
+  message: string;
+}
+
 export interface SearchResult {
   score: number;
   chunk_id: string;
@@ -95,6 +101,8 @@ export const documentApi = {
     });
   },
   delete: (docId: string) => api.delete(`/documents/${docId}`),
+  logs: (docId: string, limit: number = 200) =>
+    api.get<DocumentProcessLog[]>(`/documents/${docId}/logs`, { params: { limit } }),
 };
 
 export const searchApi = {

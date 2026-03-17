@@ -7,7 +7,14 @@ const connection = {
   port: parseInt(new URL(REDIS_URL).port || '6379'),
 };
 
-const queueOptions: QueueOptions = {
+const documentQueueOptions: QueueOptions = {
+  connection,
+  defaultJobOptions: {
+    attempts: 1,
+  },
+};
+
+const evaluationQueueOptions: QueueOptions = {
   connection,
   defaultJobOptions: {
     attempts: 3,
@@ -19,18 +26,18 @@ const queueOptions: QueueOptions = {
 };
 
 export const QUEUES = {
-  DOCUMENT_PARSE: 'document:parse',
-  DOCUMENT_CHUNK: 'document:chunk',
+  DOCUMENT_PARSE: 'document-parse',
+  DOCUMENT_CHUNK: 'document-chunk',
   EMBEDDING: 'embedding',
   INDEX: 'index',
   EVALUATION: 'evaluation',
 };
 
-export const parseQueue = new Queue(QUEUES.DOCUMENT_PARSE, queueOptions);
-export const chunkQueue = new Queue(QUEUES.DOCUMENT_CHUNK, queueOptions);
-export const embeddingQueue = new Queue(QUEUES.EMBEDDING, queueOptions);
-export const indexQueue = new Queue(QUEUES.INDEX, queueOptions);
-export const evaluationQueue = new Queue(QUEUES.EVALUATION, queueOptions);
+export const parseQueue = new Queue(QUEUES.DOCUMENT_PARSE, documentQueueOptions);
+export const chunkQueue = new Queue(QUEUES.DOCUMENT_CHUNK, documentQueueOptions);
+export const embeddingQueue = new Queue(QUEUES.EMBEDDING, documentQueueOptions);
+export const indexQueue = new Queue(QUEUES.INDEX, documentQueueOptions);
+export const evaluationQueue = new Queue(QUEUES.EVALUATION, evaluationQueueOptions);
 
 export async function connectQueues() {
   console.log('✓ Queues initialized');

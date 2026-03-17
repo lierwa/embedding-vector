@@ -157,6 +157,7 @@ export default function Dashboard() {
           >
             <option value="text-embedding-3-small">text-embedding-3-small</option>
             <option value="text-embedding-3-large">text-embedding-3-large</option>
+            <option value="ollama-nomic-embed-text">ollama-nomic-embed-text</option>
           </TextField>
           <TextField
             margin="dense"

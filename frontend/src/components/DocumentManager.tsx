@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import {
+  Alert,
   Box,
   Button,
   Typography,
@@ -14,8 +15,10 @@ import {
   IconButton,
   LinearProgress,
 } from '@mui/material';
-import { CloudUpload, Delete, Refresh } from '@mui/icons-material';
-import { documentApi, Document } from '../services/api';
+import { CloudUpload, Delete, Refresh, ReceiptLong } from '@mui/icons-material';
+import { documentApi, Document, DocumentProcessLog } from '../services/api';
+import DocumentUploadDialog from './DocumentUploadDialog';
+import DocumentProcessLogPanel from './DocumentProcessLogPanel';
 
 interface DocumentManagerProps {
   kbId: string;
@@ -24,12 +27,31 @@ interface DocumentManagerProps {
 export default function DocumentManager({ kbId }: DocumentManagerProps) {
   const [documents, setDocuments] = useState<Document[]>([]);
   const [uploading, setUploading] = useState(false);
+  const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
+  const [selectedDocId, setSelectedDocId] = useState<string>('');
+  const [selectedDocName, setSelectedDocName] = useState<string>('');
+  const [logs, setLogs] = useState<DocumentProcessLog[]>([]);
+  const [logError, setLogError] = useState('');
+  const [logsRefreshing, setLogsRefreshing] = useState(false);
 
   useEffect(() => {
     loadDocuments();
     const interval = setInterval(loadDocuments, 3000);
     return () => clearInterval(interval);
   }, [kbId]);
+
+  useEffect(() => {
+    if (!selectedDocId) {
+      return;
+    }
+
+    loadDocumentLogs(selectedDocId);
+    const interval = setInterval(() => {
+      loadDocumentLogs(selectedDocId);
+    }, 3000);
+
+    return () => clearInterval(interval);
+  }, [selectedDocId]);
 
   const loadDocuments = async () => {
     try {
@@ -40,20 +62,35 @@ export default function DocumentManager({ kbId }: DocumentManagerProps) {
     }
   };
 
-  const handleUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
+  const handleUpload = async (file: File) => {
     setUploading(true);
+    setLogError('');
     try {
-      await documentApi.upload(kbId, file);
-      loadDocuments();
-    } catch (error) {
+      const response = await documentApi.upload(kbId, file);
+      await loadDocuments();
+      setSelectedDocId(response.data.id);
+      setSelectedDocName(response.data.filename);
+      await loadDocumentLogs(response.data.id);
+    } catch (error: any) {
       console.error('Failed to upload document:', error);
-      alert('Failed to upload document');
+      const message = error?.response?.data?.error || 'Failed to upload document';
+      alert(message);
     } finally {
       setUploading(false);
-      event.target.value = '';
+    }
+  };
+
+  const loadDocumentLogs = async (docId: string) => {
+    setLogsRefreshing(true);
+    try {
+      const response = await documentApi.logs(docId);
+      setLogs(response.data);
+      setLogError('');
+    } catch (error: any) {
+      const message = error?.response?.data?.error || 'Failed to load process logs';
+      setLogError(message);
+    } finally {
+      setLogsRefreshing(false);
     }
   };
 
@@ -62,7 +99,12 @@ export default function DocumentManager({ kbId }: DocumentManagerProps) {
 
     try {
       await documentApi.delete(docId);
-      loadDocuments();
+      await loadDocuments();
+      if (selectedDocId === docId) {
+        setSelectedDocId('');
+        setSelectedDocName('');
+        setLogs([]);
+      }
     } catch (error) {
       console.error('Failed to delete document:', error);
     }
@@ -72,6 +114,10 @@ export default function DocumentManager({ kbId }: DocumentManagerProps) {
     switch (status) {
       case 'completed':
         return 'success';
+      case 'parsing':
+      case 'chunking':
+      case 'embedding':
+      case 'indexing':
       case 'processing':
         return 'info';
       case 'failed':
@@ -80,6 +126,11 @@ export default function DocumentManager({ kbId }: DocumentManagerProps) {
         return 'default';
     }
   };
+
+  const selectedDoc = documents.find((doc) => doc.id === selectedDocId);
+  const selectedDocStatus = selectedDoc?.status || '';
+  const selectedDocIsProcessing =
+    Boolean(selectedDoc) && selectedDocStatus !== 'completed' && selectedDocStatus !== 'failed';
 
   return (
     <Box>
@@ -91,12 +142,11 @@ export default function DocumentManager({ kbId }: DocumentManagerProps) {
           </IconButton>
           <Button
             variant="contained"
-            component="label"
             startIcon={<CloudUpload />}
             disabled={uploading}
+            onClick={() => setUploadDialogOpen(true)}
           >
             Upload Document
-            <input type="file" hidden onChange={handleUpload} />
           </Button>
         </Box>
       </Box>
@@ -128,6 +178,17 @@ export default function DocumentManager({ kbId }: DocumentManagerProps) {
                   {new Date(doc.uploadedAt).toLocaleDateString()}
                 </TableCell>
                 <TableCell>
+                  <IconButton
+                    size="small"
+                    color={selectedDocId === doc.id ? 'primary' : 'default'}
+                    onClick={() => {
+                      setSelectedDocId(doc.id);
+                      setSelectedDocName(doc.filename);
+                      loadDocumentLogs(doc.id);
+                    }}
+                  >
+                    <ReceiptLong fontSize="small" />
+                  </IconButton>
                   <IconButton size="small" onClick={() => handleDelete(doc.id)}>
                     <Delete fontSize="small" />
                   </IconButton>
@@ -144,6 +205,29 @@ export default function DocumentManager({ kbId }: DocumentManagerProps) {
           </TableBody>
         </Table>
       </TableContainer>
+
+      {selectedDocId && logError && (
+        <Alert sx={{ mt: 2 }} severity="error">
+          {logError}
+        </Alert>
+      )}
+
+      {selectedDocId && (
+        <DocumentProcessLogPanel
+          filename={selectedDocName}
+          logs={logs}
+          status={selectedDocStatus}
+          isProcessing={selectedDocIsProcessing}
+          isRefreshing={logsRefreshing}
+        />
+      )}
+
+      <DocumentUploadDialog
+        open={uploadDialogOpen}
+        uploading={uploading}
+        onClose={() => setUploadDialogOpen(false)}
+        onUpload={handleUpload}
+      />
     </Box>
   );
 }

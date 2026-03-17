@@ -18,6 +18,14 @@ A local single-user RAG knowledge base management and vector quality evaluation 
 3. **Query Playground**: Test and debug retrieval quality
 4. **Evaluation System**: Automated testing of vector database quality
 
+## Supported File Formats
+
+- PDF : .pdf
+- Word : .docx , .doc
+- Web : .html , .htm
+- JSON : .json
+- Text/Markdown : .txt , .md , .markdown
+
 ## Quick Start
 
 1. Copy environment variables:

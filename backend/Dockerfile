@@ -1,4 +1,6 @@
-FROM node:18-alpine
+FROM node:20-alpine
+
+RUN apk add --no-cache openssl libc6-compat
 
 WORKDIR /app
 
@@ -14,4 +16,4 @@ RUN npm run build
 
 EXPOSE 3001
 
-CMD ["sh", "-c", "npx prisma migrate deploy && npm start"]
+CMD ["sh", "-c", "npx prisma db push && npm start"]

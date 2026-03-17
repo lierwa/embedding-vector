@@ -15,6 +15,7 @@ router.delete('/kb/:id', kbController.deleteKnowledgeBase);
 router.post('/kb/:id/documents', docController.uploadDocument);
 router.get('/kb/:id/documents', docController.getDocuments);
 router.get('/documents/:docId', docController.getDocument);
+router.get('/documents/:docId/logs', docController.getDocumentLogs);
 router.delete('/documents/:docId', docController.deleteDocument);
 
 router.post('/kb/:id/search', retrievalController.search);
